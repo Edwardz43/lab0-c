@@ -88,6 +88,7 @@ bool q_insert_tail(queue_t *q, char *s)
     }
     memset(newt->value, 0, strlen(s) + 1);
     strncpy(newt->value, s, strlen(s));
+    newt->next = NULL;
     if (q->size == 0) {
         q->head = newt;
     } else {
