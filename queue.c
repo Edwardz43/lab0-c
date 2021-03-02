@@ -5,6 +5,11 @@
 #include "harness.h"
 #include "queue.h"
 
+static void merge_sort(list_ele_t **headRef);
+static void front_back_split(list_ele_t *source,
+                             list_ele_t **frontRef,
+                             list_ele_t **backRef);
+static list_ele_t *sorted_merge(list_ele_t *l1, list_ele_t *l2);
 /*
  * Create empty queue.
  * Return NULL if could not allocate space.
@@ -164,6 +169,56 @@ void q_reverse(queue_t *q)
     q->tail->next = NULL;
 }
 
+/* merge sort method */
+static void merge_sort(list_ele_t **headRef)
+{
+    list_ele_t *head, *slow, *fast;
+    head = *headRef;
+    if (head && head->next) {
+        front_back_split(head, &slow, &fast);
+        merge_sort(&slow);
+        merge_sort(&fast);
+        *headRef = sorted_merge(slow, fast);
+    }
+}
+
+/* sort and merge two list */
+static list_ele_t *sorted_merge(list_ele_t *l1, list_ele_t *l2)
+{
+    list_ele_t *result;
+    if (!l1)
+        return l2;
+    if (!l2)
+        return l1;
+    if (strcmp(l1->value, l2->value) < 0) {
+        result = l1;
+        result->next = sorted_merge(l1->next, l2);
+    } else {
+        result = l2;
+        result->next = sorted_merge(l1, l2->next);
+    }
+    return result;
+}
+
+/* split list to two partition */
+static void front_back_split(list_ele_t *source,
+                             list_ele_t **frontRef,
+                             list_ele_t **backRef)
+{
+    list_ele_t *slow = source;
+    list_ele_t *fast = source->next;
+    while (fast) {
+        fast = fast->next;
+        if (fast) {
+            slow = slow->next;
+            fast = fast->next;
+        }
+    }
+    *frontRef = source;
+    *backRef = slow->next;
+    slow->next = NULL;
+}
+
 /*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
@@ -173,32 +228,10 @@ void q_sort(queue_t *q)
 {
     if (!q || q->size == 0 || q->size == 1)
         return;
-    list_ele_t *pre, *cur;
-    for (int i = q->size; i > 0; i--) {
-        pre = q->head;
-        cur = q->head;
-        for (int j = 0; j < i - 1 && cur->next; j++) {
-            if (strcmp(cur->value, cur->next->value) > 0) {
-                list_ele_t *tmp = cur->next;
-                cur->next = tmp->next;
-                tmp->next = cur;
-                if (cur == q->head) {
-                    q->head = tmp;
-                    pre = tmp;
-                } else {
-                    pre->next = tmp;
-                    pre = pre->next;
-                }
-
-            } else {
-                cur = cur->next;
-                if (j != 0)
-                    pre = pre->next;
-            }
-        }
+    merge_sort(&q->head);
+    list_ele_t *tail = q->head;
+    while (tail->next) {
+        tail = tail->next;
     }
-    list_ele_t *tmph = q->head;
-    while (tmph->next)
-        tmph = tmph->next;
-    q->tail = tmph;
+    q->tail = tail;
 }
