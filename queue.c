@@ -9,7 +9,6 @@ static void merge_sort(list_ele_t **headRef);
 static void front_back_split(list_ele_t *source,
                              list_ele_t **frontRef,
                              list_ele_t **backRef);
-static list_ele_t *sorted_merge(list_ele_t *l1, list_ele_t *l2);
 /*
  * Create empty queue.
  * Return NULL if could not allocate space.
@@ -172,32 +171,31 @@ void q_reverse(queue_t *q)
 /* merge sort method */
 static void merge_sort(list_ele_t **headRef)
 {
-    list_ele_t *head, *slow, *fast;
-    head = *headRef;
-    if (head && head->next) {
-        front_back_split(head, &slow, &fast);
-        merge_sort(&slow);
-        merge_sort(&fast);
-        *headRef = sorted_merge(slow, fast);
-    }
-}
+    list_ele_t *slow, *fast;
 
-/* sort and merge two list */
-static list_ele_t *sorted_merge(list_ele_t *l1, list_ele_t *l2)
-{
-    list_ele_t *result;
-    if (!l1)
-        return l2;
-    if (!l2)
-        return l1;
-    if (strcmp(l1->value, l2->value) < 0) {
-        result = l1;
-        result->next = sorted_merge(l1->next, l2);
-    } else {
-        result = l2;
-        result->next = sorted_merge(l1, l2->next);
+    if (!(*headRef) || !(*headRef)->next)
+        return;
+    slow = *headRef;
+    fast = (*headRef)->next;
+
+    front_back_split(*headRef, &slow, &fast);
+    merge_sort(&slow);
+    merge_sort(&fast);
+    *headRef = NULL;
+    list_ele_t **tmp = headRef;
+
+    while (slow && fast) {
+        if (strcmp(slow->value, fast->value) < 0) {
+            *tmp = slow;
+            slow = slow->next;
+        } else {
+            *tmp = fast;
+            fast = fast->next;
+        }
+        tmp = &(*tmp)->next;
     }
-    return result;
+
+    *tmp = slow ? slow : fast;
 }
 
 /* split list to two partition */
@@ -229,9 +227,7 @@ void q_sort(queue_t *q)
     if (!q || q->size == 0 || q->size == 1)
         return;
     merge_sort(&q->head);
-    list_ele_t *tail = q->head;
-    while (tail->next) {
-        tail = tail->next;
+    while (q->tail->next) {
+        q->tail = q->tail->next;
     }
-    q->tail = tail;
 }
